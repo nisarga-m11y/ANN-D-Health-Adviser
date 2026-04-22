@@ -1,0 +1,316 @@
+:root {
+  --ann-bg-main: #1a0b2e;
+  --ann-bg-mid: #2b0f4f;
+  --ann-bg-light: #3a1685;
+  --ann-primary: #a78bfa;
+  --ann-primary-strong: #8b5cf6;
+  --ann-text: #f6f2ff;
+  --ann-muted: rgba(203, 184, 255, 0.9);
+  --ann-border: rgba(255, 255, 255, 0.16);
+  --ann-card: rgba(15, 6, 32, 0.62);
+  --ann-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body.login,
+body {
+  background: radial-gradient(1200px 800px at 20% 20%, #3a1677 0%, transparent 65%),
+    radial-gradient(900px 700px at 80% 10%, #3d1a7f 0%, transparent 60%),
+    linear-gradient(135deg, var(--ann-bg-main), var(--ann-bg-mid) 45%, var(--ann-bg-light) 70%, #7b47ff 110%);
+  color: var(--ann-text);
+}
+
+#header {
+  background: rgba(15, 6, 32, 0.55);
+  border-bottom: 1px solid var(--ann-border);
+  backdrop-filter: blur(8px);
+}
+
+#site-name a,
+#site-name,
+#header a:link,
+#header a:visited {
+  color: var(--ann-text);
+}
+
+#container {
+  background: transparent;
+}
+
+#content,
+.module,
+#changelist,
+#content-main,
+.dashboard #content,
+.dashboard .module {
+  background: var(--ann-card);
+  border: 1px solid var(--ann-border);
+  border-radius: 14px;
+  box-shadow: var(--ann-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #120723;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button {
+  background: linear-gradient(135deg, #c4b5fd, #7c3aed);
+  color: #120723;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+.submit-row input:hover,
+a.button:hover {
+  filter: brightness(1.05);
+}
+
+input,
+textarea,
+select {
+  background: rgba(15, 6, 32, 0.35);
+  color: var(--ann-text);
+  border: 1px solid var(--ann-border);
+  border-radius: 10px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--ann-primary);
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.22);
+}
+
+a {
+  color: #d6c7ff;
+}
+
+#login-form {
+  background: var(--ann-card);
+  border: 1px solid var(--ann-border);
+  border-radius: 16px;
+  box-shadow: var(--ann-shadow);
+  padding: 1.1rem 1.1rem 0.8rem;
+}
+
+.login #header {
+  border-radius: 14px 14px 0 0;
+}
+
+.login #container {
+  border: 0;
+  background: transparent;
+}
+
+.login #content {
+  background: var(--ann-card);
+  border: 1px solid var(--ann-border);
+  border-top: 0;
+}
+
+.breadcrumbs {
+  background: rgba(15, 6, 32, 0.42);
+  border-bottom: 1px solid var(--ann-border);
+  color: var(--ann-muted);
+}
+
+table thead th {
+  background: rgba(124, 58, 237, 0.28);
+  color: var(--ann-text);
+}
+
+tr:nth-child(even),
+tr:nth-child(odd) {
+  background: transparent;
+}
+
+/* ---------------------------
+   Login page polish
+   --------------------------- */
+body.login {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(1200px 700px at 15% 10%, rgba(18, 224, 232, 0.18), transparent 70%),
+    radial-gradient(900px 560px at 88% 92%, rgba(139, 92, 246, 0.2), transparent 74%),
+    linear-gradient(135deg, #020b1f 0%, #07162f 50%, #031226 100%);
+}
+
+body.login #container {
+  width: min(440px, 92vw);
+  min-width: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(39, 198, 255, 0.28);
+  box-shadow: 0 18px 46px rgba(2, 11, 31, 0.52);
+  background: rgba(5, 15, 35, 0.9);
+}
+
+body.login #header {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(39, 198, 255, 0.2);
+  background: rgba(5, 15, 35, 0.9);
+  box-shadow: none;
+}
+
+body.login #site-name {
+  margin: 0;
+  padding: 18px 20px;
+  text-align: center;
+  font-size: 1.15rem;
+  letter-spacing: 0.2px;
+}
+
+body.login #content {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: rgba(5, 15, 35, 0.88);
+  box-shadow: none;
+}
+
+body.login #content-main {
+  width: 100%;
+}
+
+body.login #login-form {
+  margin: 0;
+  padding: 20px 20px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.login .form-row {
+  margin-bottom: 14px;
+}
+
+body.login .form-row label {
+  display: block;
+  margin-bottom: 6px;
+  color: #c9e8ff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+body.login .form-row input[type="text"],
+body.login .form-row input[type="password"],
+body.login .form-row input[type="email"] {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(39, 198, 255, 0.34);
+  background: rgba(3, 18, 38, 0.9);
+  color: #f2f7ff;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+
+body.login .form-row input:focus {
+  border-color: #27c6ff;
+  box-shadow: 0 0 0 3px rgba(39, 198, 255, 0.2);
+  outline: 0;
+}
+
+body.login .submit-row {
+  margin: 2px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+
+body.login .submit-row input[type="submit"] {
+  min-height: 44px;
+  border-radius: 12px;
+  padding: 0 20px;
+  background: linear-gradient(135deg, #12e0e8, #27c6ff);
+  color: #031226;
+  border: 1px solid rgba(39, 198, 255, 0.45);
+  box-shadow: 0 8px 20px rgba(39, 198, 255, 0.35);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+body.login .submit-row input[type="submit"]:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+body.login .password-reset-link,
+body.login .password-reset-link a {
+  color: #9cd2ff;
+}
+
+body.login .errornote,
+body.login .errorlist {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 90, 95, 0.42);
+  background: rgba(255, 90, 95, 0.12);
+  color: #ffd9dc;
+}
+
+@media (max-width: 520px) {
+  body.login {
+    padding: 14px;
+  }
+
+  body.login #site-name {
+    font-size: 1.02rem;
+    padding: 14px 14px;
+  }
+
+  body.login #login-form {
+    padding: 14px 14px 10px;
+  }
+}
+
+/* Final hard override for clean edge geometry on Django login layout */
+body.login #container {
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(39, 198, 255, 0.28) !important;
+  background: rgba(5, 15, 35, 0.9) !important;
+}
+
+body.login #header {
+  border-radius: 20px 20px 0 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(39, 198, 255, 0.22) !important;
+}
+
+body.login #content {
+  border-radius: 0 0 20px 20px !important;
+  border: 0 !important;
+  margin: 0 !important;
+}
+
+body.login #content-main,
+body.login #login-form {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}

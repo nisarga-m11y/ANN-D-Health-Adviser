@@ -1,0 +1,48 @@
+Watching for file changes with StatReloader
+Not Found: /
+[22/Feb/2026 14:19:55] "GET / HTTP/1.1" 404 2461
+[22/Feb/2026 14:19:55,404] - Broken pipe from ('127.0.0.1', 53495)
+[22/Feb/2026 14:20:09] "POST /api/auth/register/ HTTP/1.1" 201 123
+[22/Feb/2026 14:20:10,029] - Broken pipe from ('127.0.0.1', 53503)
+Bad Request: /api/auth/login/
+[22/Feb/2026 14:20:10] "POST /api/auth/login/ HTTP/1.1" 400 50
+[22/Feb/2026 14:20:10,752] - Broken pipe from ('127.0.0.1', 53505)
+[22/Feb/2026 14:20:24] "POST /api/auth/register/ HTTP/1.1" 201 124
+[22/Feb/2026 14:20:24] "POST /api/auth/login/ HTTP/1.1" 200 124
+[22/Feb/2026 14:20:24] "POST /api/chat/predict/ HTTP/1.1" 200 415
+[22/Feb/2026 14:20:24,671] - Broken pipe from ('127.0.0.1', 53510)
+Not Found: /
+[22/Feb/2026 14:24:31] "GET / HTTP/1.1" 404 2461
+Not Found: /favicon.ico
+[22/Feb/2026 14:24:31] "GET /favicon.ico HTTP/1.1" 404 2512
+[22/Feb/2026 14:31:24] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[22/Feb/2026 14:31:30] "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+[22/Feb/2026 14:31:43] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[22/Feb/2026 14:31:48] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[22/Feb/2026 14:31:52] "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+[22/Feb/2026 14:31:57] "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+[22/Feb/2026 14:32:43] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+Method Not Allowed: /api/auth/register/
+[22/Feb/2026 14:34:33] "GET /api/auth/register/ HTTP/1.1" 405 40
+[22/Feb/2026 14:34:33,060] - Broken pipe from ('127.0.0.1', 52235)
+[22/Feb/2026 14:34:49] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[22/Feb/2026 14:34:49] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[22/Feb/2026 14:35:31] "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+[22/Feb/2026 14:35:41] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[22/Feb/2026 14:35:42] "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[22/Feb/2026 14:35:46] "POST /api/auth/register/ HTTP/1.1" 201 122
+[22/Feb/2026 14:35:46,699] - Broken pipe from ('127.0.0.1', 61355)
+[22/Feb/2026 14:35:48] "POST /api/auth/register/ HTTP/1.1" 201 121
+[22/Feb/2026 14:35:48,117] - Broken pipe from ('127.0.0.1', 61357)
+[22/Feb/2026 14:36:46] "POST /api/auth/register/ HTTP/1.1" 201 118
+[22/Feb/2026 14:36:46,911] - Broken pipe from ('127.0.0.1', 51455)
+[22/Feb/2026 14:36:48] "POST /api/auth/register/ HTTP/1.1" 201 117
+[22/Feb/2026 14:36:48,676] - Broken pipe from ('127.0.0.1', 51457)
+C:\Users\Hp\chatbot\backend\config\settings.py changed, reloading.
+Watching for file changes with StatReloader
+[22/Feb/2026 14:40:44] "POST /api/auth/register/ HTTP/1.1" 201 120
+[22/Feb/2026 14:40:44,101] - Broken pipe from ('127.0.0.1', 61125)
+[22/Feb/2026 14:41:06] "POST /api/auth/register/ HTTP/1.1" 201 124
+[22/Feb/2026 14:41:06,137] - Broken pipe from ('127.0.0.1', 61139)
+C:\Users\Hp\chatbot\backend\config\settings.py changed, reloading.
+Watching for file changes with StatReloader

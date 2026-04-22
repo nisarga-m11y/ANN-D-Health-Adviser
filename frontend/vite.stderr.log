@@ -1,0 +1,113 @@
+[2m2:40:51 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: C:\Users\Hp\chatbot\frontend\src\pages\ChatbotDashboard.jsx: Expecting Unicode escape sequence \uXXXX. (121:36)
+
+[0m [90m 119 |[31m   [36mconst[31m [loading[33m,[31m setLoading] [33m=[31m useState([36mfalse[31m)[33m;[31m
+ [90m 120 |[31m   [36mconst[31m [error[33m,[31m setError] [33m=[31m useState([32m""[31m)[33m;[31m
+[31m[1m>[22m[31m[90m 121 |[31m   [36mconst[31m [lang[33m,[31m setLang] [33m=[31m useState([37m[41m[1m\[22m[49m[31m[32m"en\");[31m
+ [90m     |[31m                                     [31m[1m^[22m[31m
+ [90m 122 |[31m   [36mconst[31m [autoSpeak[33m,[31m setAutoSpeak] [33m=[31m useState([36mfalse[31m)[33m;[31m
+ [90m 123 |[31m   [36mconst[31m [speechSupported[33m,[31m setSpeechSupported] [33m=[31m useState([36mfalse[31m)[33m;[31m
+ [90m 124 |[31m   [36mconst[31m [ttsSupported[33m,[31m setTtsSupported] [33m=[31m useState([36mfalse[31m)[33m;[31m[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mC:/Users/Hp/chatbot/frontend/src/pages/ChatbotDashboard.jsx[39m:121:36
+[33m  121|    const [lang, setLang] = useState(\"en\");
+  122|    const [autoSpeak, setAutoSpeak] = useState(false);
+  123|    const [speechSupported, setSpeechSupported] = useState(false);
+     |                                                             ^
+  124|    const [ttsSupported, setTtsSupported] = useState(false);
+  125|    const [ttsVoicesLoaded, setTtsVoicesLoaded] = useState(false);[39m
+      at constructor (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:365:19)
+      at JSXParserMixin.raise (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:6599:19)
+      at JSXParserMixin.readWord1 (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:6559:16)
+      at JSXParserMixin.readWord (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:6579:23)
+      at JSXParserMixin.getTokenFromCode (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:6298:14)
+      at JSXParserMixin.getTokenFromCode (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:4797:11)
+      at JSXParserMixin.nextToken (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:5782:10)
+      at JSXParserMixin.next (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:5692:10)
+      at JSXParserMixin.parseCoverCallAndAsyncArrowHead (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:11169:10)
+      at JSXParserMixin.parseSubscript (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:11120:19)
+      at JSXParserMixin.parseSubscripts (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:11094:19)
+      at JSXParserMixin.parseExprSubscripts (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:11085:17)
+      at JSXParserMixin.parseUpdate (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:11066:21)
+      at JSXParserMixin.parseMaybeUnary (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:11046:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:10899:61)
+      at JSXParserMixin.parseExprOps (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:10904:23)
+      at JSXParserMixin.parseMaybeConditional (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:10881:23)
+      at JSXParserMixin.parseMaybeAssign (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:10831:21)
+      at C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:10800:39
+      at JSXParserMixin.allowInAnd (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12421:16)
+      at JSXParserMixin.parseMaybeAssignAllowIn (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:10800:17)
+      at JSXParserMixin.parseVar (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13384:91)
+      at JSXParserMixin.parseVarStatement (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12767:17)
+      at JSXParserMixin.parseStatementListItem (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12747:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13316:61)
+      at JSXParserMixin.parseBlockBody (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13309:10)
+      at JSXParserMixin.parseBlock (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13297:10)
+      at JSXParserMixin.parseFunctionBody (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12100:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12086:10)
+      at C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13445:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12403:14)
+      at JSXParserMixin.parseFunction (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13444:10)
+      at JSXParserMixin.parseFunctionStatement (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13125:17)
+      at JSXParserMixin.parseStatementContent (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12791:21)
+      at JSXParserMixin.parseStatementLike (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13309:10)
+      at JSXParserMixin.parseProgram (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12612:25)
+      at JSXParserMixin.parse (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:14488:25)
+      at parse (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:14522:38)
+      at parser (C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\parser\index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\transformation\index.js:22:50)
+      at run.next (<anonymous>)
+[2m2:41:17 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: C:\Users\Hp\chatbot\frontend\src\pages\ChatbotDashboard.jsx: 'return' outside of function. (555:2)
+
+[0m [90m 553 |[31m   }
+ [90m 554 |[31m
+[31m[1m>[22m[31m[90m 555 |[31m   [36mreturn[31m (
+ [90m     |[31m   [31m[1m^[22m[31m
+ [90m 556 |[31m     [33m<[31m[33mmain[31m className[33m=[31m[32m"container dashboard"[31m[33m>[31m
+ [90m 557 |[31m       [33m<[31m[33mdiv[31m className[33m=[31m[32m"dashboard-head"[31m[33m>[31m
+ [90m 558 |[31m         [33m<[31m[33mh2[31m[33m>[31m[33mVoice[31m[33m-[31m[33mEnabled[31m [33mHealth[31m [33mChatbot[31m[33m<[31m[33m/[31m[33mh2[31m[33m>[31m[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mC:/Users/Hp/chatbot/frontend/src/pages/ChatbotDashboard.jsx[39m:555:2
+[33m  563|            <span style={{ fontWeight: 600 }}>Language:</span>
+  564|            <button type="button" className="btn-outline" onClick={() => setLang("en")} aria-pressed={lang === "en"}>English</button>
+  565|            <button type="button" className="btn-outline" onClick={() => setLang("kn")} aria-pressed={lang === "kn"}>Kannada</button>
+     |                          ^
+  566|          </div>
+  567|  [39m
+      at constructor (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:365:19)
+      at JSXParserMixin.raise (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:6599:19)
+      at JSXParserMixin.parseReturnStatement (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13136:12)
+      at JSXParserMixin.parseStatementContent (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12798:21)
+      at JSXParserMixin.parseStatementLike (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:13309:10)
+      at JSXParserMixin.parseProgram (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:12612:25)
+      at JSXParserMixin.parse (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:14488:25)
+      at parse (C:\Users\Hp\chatbot\frontend\node_modules\@babel\parser\lib\index.js:14522:38)
+      at parser (C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\parser\index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\transformation\index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:261:32)
+      at C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:223:11)
+      at C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:189:28
+      at C:\Users\Hp\chatbot\frontend\node_modules\@babel\core\lib\gensync-utils\async.js:67:7
+      at C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:113:33
+      at step (C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:287:14)
+      at C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (C:\Users\Hp\chatbot\frontend\node_modules\gensync\index.js:223:11)

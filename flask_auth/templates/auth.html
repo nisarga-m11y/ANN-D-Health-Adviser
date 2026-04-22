@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ANN-D Health Advisor | Auth</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <main class="wrap">
+      <section class="card" aria-label="Authentication">
+        <header class="header">
+          <div class="brand">
+            <div class="logo" aria-hidden="true">
+              <i class="fa-solid fa-brain"></i>
+            </div>
+            <div>
+              <div class="title">ANN-D Health Advisor</div>
+              <div class="subtitle">Secure OTP login for healthcare + AI</div>
+            </div>
+          </div>
+        </header>
+
+        <div class="tabs" role="tablist" aria-label="Login methods">
+          <button class="tab active" type="button" data-tab="email" role="tab" aria-selected="true">
+            <i class="fa-regular fa-envelope"></i>
+            Email OTP
+          </button>
+          <button class="tab" type="button" data-tab="mobile" role="tab" aria-selected="false">
+            <i class="fa-solid fa-phone"></i>
+            Mobile OTP
+          </button>
+        </div>
+
+        <div class="content">
+          <div id="msg" class="msg" role="status" aria-live="polite"></div>
+
+          <form id="form" class="form" autocomplete="on">
+            <div id="emailFields" class="fields">
+              <label class="field">
+                <span class="label">
+                  <i class="fa-regular fa-envelope"></i>
+                  Email
+                </span>
+                <input id="email" type="email" placeholder="you@example.com" inputmode="email" />
+              </label>
+            </div>
+
+            <div id="mobileFields" class="fields hidden">
+              <label class="field">
+                <span class="label">
+                  <i class="fa-solid fa-phone"></i>
+                  Mobile Number
+                </span>
+                <input id="mobile" type="tel" placeholder="+91 98765 43210" inputmode="tel" />
+              </label>
+              <div class="hint">
+                Mobile OTP is registration-friendly. SMS is mocked by default (OTP shown in server logs).
+              </div>
+            </div>
+
+            <div id="otpFields" class="fields hidden">
+              <label class="field">
+                <span class="label">
+                  <i class="fa-solid fa-key"></i>
+                  OTP
+                </span>
+                <input
+                  id="otp"
+                  type="text"
+                  placeholder="6-digit OTP"
+                  inputmode="numeric"
+                  maxlength="6"
+                  autocomplete="one-time-code"
+                />
+              </label>
+              <div class="timerRow">
+                <div class="timer">
+                  Expires in <span id="ttl">60</span>s
+                </div>
+                <button id="resendBtn" class="linkBtn" type="button" disabled>Resend OTP</button>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="sendBtn" class="btn primary" type="button">
+                <span class="btnIcon"><i class="fa-solid fa-paper-plane"></i></span>
+                <span id="sendText">Send OTP</span>
+              </button>
+              <button id="verifyBtn" class="btn" type="button" disabled>
+                <span class="btnIcon"><i class="fa-solid fa-shield-check"></i></span>
+                Verify OTP
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <footer class="footer">
+          <div class="fineprint">
+            By continuing, you agree to use this AI tool responsibly. This is not medical diagnosis.
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  </body>
+</html>

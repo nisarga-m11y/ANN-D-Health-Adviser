@@ -1,0 +1,114 @@
+﻿from rest_framework import serializers
+
+import re
+
+from .models import ChatHistory, ChatRating, SymptomImageAnalysis
+
+
+LANG_FIELD = serializers.ChoiceField(
+    choices=[("en", "English"), ("kn", "Kannada")],
+    required=False,
+    default="en",
+)
+
+
+class ChatMessageSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000)
+    lang = LANG_FIELD
+
+
+class ChatMessageWithImageSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000)
+    image = serializers.FileField(required=False, allow_null=True)
+    lang = LANG_FIELD
+
+
+class ChatHistorySerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatHistory
+        fields = ["id", "message", "image_url", "response", "predicted_disease", "advice", "timestamp"]
+
+    def get_image_url(self, obj):
+        if not getattr(obj, "image", None):
+            return None
+        try:
+            url = obj.image.url
+        except ValueError:
+            return None
+
+        request = self.context.get("request")
+        if request is None:
+            return url
+        return request.build_absolute_uri(url)
+
+
+class PrescriptionUploadSerializer(serializers.Serializer):
+    image = serializers.FileField()
+
+
+class PrescriptionChatMessageSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+    image = serializers.FileField()
+    lang = LANG_FIELD
+
+
+class VoiceUploadSerializer(serializers.Serializer):
+    audio = serializers.FileField()
+    lang = LANG_FIELD
+
+
+class TranslateSerializer(serializers.Serializer):
+    text = serializers.CharField(max_length=4000)
+
+
+class SymptomImageUploadSerializer(serializers.Serializer):
+    image = serializers.FileField()
+    category = serializers.ChoiceField(choices=[("skin_rash", "Skin Rash"), ("eye_redness", "Eye Redness")])
+
+
+class SymptomImageAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SymptomImageAnalysis
+        fields = ["id", "category", "assessment", "confidence", "guidance", "created_at", "image"]
+
+
+class ChatRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatRating
+        fields = ["id", "chat", "rating", "feedback", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
+
+
+class SeveritySerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField()
+    severity = serializers.ChoiceField(choices=[("mild", "mild"), ("moderate", "moderate"), ("severe", "severe")])
+    lang = LANG_FIELD
+
+
+class CallRequestSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(max_length=20)
+
+    def validate_phone_number(self, value):
+        value = str(value or "").strip()
+        if not re.match(r"^\+[1-9]\d{7,14}$", value):
+            raise serializers.ValidationError("Phone number must be in E.164 format (example: +919999999999).")
+        return value
+
+
+class MedicineImageUploadSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+    image = serializers.FileField()
+    lang = LANG_FIELD
+
+
+class AutoImageUploadSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+    image = serializers.FileField()
+    lang = LANG_FIELD

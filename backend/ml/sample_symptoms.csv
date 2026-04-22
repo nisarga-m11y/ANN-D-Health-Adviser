@@ -1,0 +1,31 @@
+﻿symptom,disease
+"fever cough sore throat",Flu
+"runny nose sneezing mild fever",Common Cold
+"headache nausea light sensitivity",Migraine
+"stomach pain bloating nausea",Gastritis
+"itchy eyes sneezing runny nose",Allergy
+"dry cough fever fatigue loss smell",COVID-19
+"body ache chills fever",Flu
+"sore throat congestion headache",Common Cold
+"throbbing headache vomiting",Migraine
+"acid reflux upper stomach pain",Gastritis
+"skin rash itching watery eyes",Allergy
+"shortness of breath fever dry cough",COVID-19
+"fever muscle pain weakness",Flu
+"cough mucus sneezing",Common Cold
+"one sided headache light sensitivity",Migraine
+"indigestion stomach burning",Gastritis
+"sneezing nasal congestion itchy throat",Allergy
+"fatigue fever cough chest tightness",COVID-19
+"high fever chills sore muscles",Flu
+"mild cough runny nose fatigue",Common Cold
+"nausea visual disturbance headache",Migraine
+"abdominal discomfort nausea after meals",Gastritis
+"itching nose repeated sneezing",Allergy
+"loss of taste fever body ache",COVID-19
+"fever cough headache tiredness",Flu
+"blocked nose mild sore throat",Common Cold
+"intense headache sensitivity to sound",Migraine
+"stomach cramps gas bloating",Gastritis
+"watery eyes sinus irritation",Allergy
+"persistent dry cough fever weakness",COVID-19

@@ -1,0 +1,614 @@
+import re
+from django.conf import settings
+from django.core.cache import cache
+from rest_framework import permissions, status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import ChatHistory, ChatRating, SymptomImageAnalysis
+from .serializers import (
+    ChatHistorySerializer,
+    ChatMessageSerializer,
+    ChatMessageWithImageSerializer,
+    ChatRatingSerializer,
+    CallRequestSerializer,
+    PrescriptionUploadSerializer,
+    PrescriptionChatMessageSerializer,
+    TranslateSerializer,
+    VoiceUploadSerializer,
+    SeveritySerializer,
+    SymptomImageAnalysisSerializer,
+    SymptomImageUploadSerializer,
+    MedicineImageUploadSerializer,
+    AutoImageUploadSerializer,
+)
+from .services import (
+    analyze_prescription_image,
+    analyze_symptom_image,
+    analyze_symptoms_with_gemini,
+    analyze_medicine_image,
+    normalize_symptom_message,
+    build_tablet_suggestions,
+    build_severity_prompt_text,
+    build_severity_response_text,
+    build_prescription_response_text,
+    build_medicine_response_text,
+    analyze_auto_image_message,
+    transcribe_kannada_audio_to_english,
+    translate_to_english,
+    translate_to_kannada,
+    is_twilio_calling_enabled,
+    initiate_twilio_callback,
+)
+LANG_CHOICES = {"en", "kn"}
+
+
+_KANNADA_HINTS = {
+    "\u0cae\u0cca\u0ca3\u0c95\u0cbe\u0cb2\u0cc1 \u0ca8\u0ccb\u0cb5\u0cc1": "knee pain",
+    "\u0cae\u0cca\u0ca3\u0c95\u0cbe\u0cb2\u0cc1 \u0cb5\u0cc7\u0ca6\u0ca8\u0cc6": "knee pain",
+    "\u0c95\u0cbe\u0cb2\u0cc1 \u0ca8\u0ccb\u0cb5\u0cc1": "leg pain",
+    "\u0cb8\u0c82\u0ca7\u0cbf \u0ca8\u0ccb\u0cb5\u0cc1": "joint pain",
+    "\u0cac\u0cc6\u0ca8\u0ccd\u0ca8\u0cc1 \u0ca8\u0ccb\u0cb5\u0cc1": "back pain",
+    "\u0c95\u0cc1\u0ca4\u0ccd\u0ca4\u0cbf\u0c97\u0cc6 \u0ca8\u0ccb\u0cb5\u0cc1": "neck pain",
+    "\u0ca4\u0cb2\u0cc6\u0ca8\u0ccb\u0cb5\u0cc1": "headache",
+    "\u0c9c\u0ccd\u0cb5\u0cb0": "fever",
+    "\u0c95\u0cc6\u0cae\u0ccd\u0cae\u0cc1": "cough",
+    "\u0c97\u0c82\u0c9f\u0cb2\u0cc1 \u0ca8\u0ccb\u0cb5\u0cc1": "sore throat",
+}
+
+
+def _augment_with_kannada_hints(message: str) -> str:
+    additions = [en for kn, en in _KANNADA_HINTS.items() if kn and kn in (message or "")]
+    if not additions:
+        return message
+    seen = set()
+    unique = []
+    for item in additions:
+        if item in seen:
+            continue
+        seen.add(item)
+        unique.append(item)
+    return (message or "") + " " + " ".join(unique)
+
+
+def _resolve_lang(value: str) -> str:
+    value = str(value or "").strip().lower()
+    return value if value in LANG_CHOICES else "en"
+
+
+def _prepare_message_for_analysis(message: str) -> str:
+    message = str(message or \"\").strip()
+    if not message:
+        return \"\"
+
+    if re.search(r\"[^\\x00-\\x7F]\", message):
+        translated = translate_to_english(message)
+        if translated and not re.search(r\"[^\\x00-\\x7F]\", translated):
+            return translated
+        hinted = _augment_with_kannada_hints(message)
+        if hinted != message:
+            return hinted
+        return translated or message
+
+    return message
+
+
+
+def _localize_response_text(response_text_en: str, lang: str) -> tuple[str, str]:
+    if lang == "kn":
+        response_kn = translate_to_kannada(response_text_en)
+        return response_kn, response_kn
+    return response_text_en, response_text_en
+
+class SymptomPredictionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChatMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message = serializer.validated_data["message"]
+        message = normalize_symptom_message(message)
+
+        analysis_message = _prepare_message_for_analysis(message)
+
+
+        result = analyze_symptoms_with_gemini(analysis_message)
+        return Response(
+            {
+                "message": message,
+                "predicted_disease": result["predicted_disease"],
+                "tablets": result["tablets"],
+                "tablet_suggestions": build_tablet_suggestions(result.get("tablets", ""), result.get("predicted_disease", "")),
+                "advice": result["advice"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChatbotMessageView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request):
+        serializer = ChatMessageWithImageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message = serializer.validated_data["message"]
+        message = normalize_symptom_message(message)
+        image = serializer.validated_data.get("image")
+
+        lang = _resolve_lang(serializer.validated_data.get("lang"))
+        analysis_message = _prepare_message_for_analysis(message)
+        if image is not None:
+            content_type = getattr(image, "content_type", "")
+            if content_type and not content_type.startswith("image/"):
+                return Response({"detail": "Please upload a valid image file."}, status=status.HTTP_400_BAD_REQUEST)
+            if getattr(image, "size", 0) and image.size > 5 * 1024 * 1024:
+                return Response({"detail": "Image must be 5MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
+        result = analyze_symptoms_with_gemini(analysis_message)
+        response_text_en = build_severity_prompt_text(result["predicted_disease"])
+        response_text, speech_text = _localize_response_text(response_text_en, lang)
+        chat = ChatHistory.objects.create(
+            user=request.user,
+            message=message,
+            image=image,
+            response=response_text,
+            predicted_disease=result["predicted_disease"],
+            advice=result["advice"],
+        )
+
+        image_url = None
+        if getattr(chat, "image", None):
+            try:
+                image_url = request.build_absolute_uri(chat.image.url)
+            except ValueError:
+                image_url = None
+
+        return Response(
+            {
+                "chat_id": chat.id,
+                "message": message,
+                "image_url": image_url,
+                "predicted_disease": result["predicted_disease"],
+                "tablets": result["tablets"],
+                "tablet_suggestions": build_tablet_suggestions(result.get("tablets", ""), result.get("predicted_disease", "")),
+                "advice": result["advice"],
+                "response": response_text,
+                "speech_text": speech_text,
+
+                "response_lang": lang,
+                "speech_lang": lang,
+                "pending_severity": True,
+                "severity_options": ["mild", "moderate", "severe"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChatHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        history = ChatHistory.objects.filter(user=request.user)[:50]
+        return Response(ChatHistorySerializer(history, many=True, context={"request": request}).data)
+
+
+class SymptomImageAnalysisView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = SymptomImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        image = serializer.validated_data["image"]
+        category = serializer.validated_data["category"]
+        content_type = getattr(image, "content_type", "")
+        if content_type and not content_type.startswith("image/"):
+            return Response({"detail": "Please upload a valid image file."}, status=status.HTTP_400_BAD_REQUEST)
+        result = analyze_symptom_image(image, category)
+        image.seek(0)
+
+        analysis = SymptomImageAnalysis.objects.create(
+            user=request.user,
+            image=image,
+            category=category,
+            assessment=result["assessment"],
+            confidence=result["confidence"],
+            guidance=result["guidance"],
+        )
+
+        return Response(SymptomImageAnalysisSerializer(analysis).data, status=status.HTTP_201_CREATED)
+
+
+
+
+class PrescriptionHelperView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = PrescriptionUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        image = serializer.validated_data["image"]
+        content_type = getattr(image, "content_type", "")
+        if content_type and not content_type.startswith("image/"):
+            return Response({"detail": "Please upload a valid image file."}, status=status.HTTP_400_BAD_REQUEST)
+        if getattr(image, "size", 0) and image.size > 5 * 1024 * 1024:
+            return Response({"detail": "Image must be 5MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = analyze_prescription_image(image)
+        return Response(result, status=status.HTTP_200_OK)
+
+
+
+class TranslateToEnglishView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = TranslateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        text = serializer.validated_data["text"]
+        text_en = translate_to_english(text)
+        return Response({"text_en": text_en}, status=status.HTTP_200_OK)
+
+
+class VoiceChatMessageView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = VoiceUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        lang = _resolve_lang(serializer.validated_data.get("lang"))
+        audio = serializer.validated_data["audio"]
+        content_type = getattr(audio, "content_type", "")
+        if content_type and not content_type.startswith("audio/"):
+            return Response({"detail": "Please upload a valid audio file."}, status=status.HTTP_400_BAD_REQUEST)
+        if getattr(audio, "size", 0) and audio.size > 10 * 1024 * 1024:
+            return Response({"detail": "Audio must be 10MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
+
+        transcript_en = transcribe_kannada_audio_to_english(audio)
+        transcript_en = normalize_symptom_message(transcript_en)
+        if not transcript_en:
+            return Response(
+                {"detail": "Could not transcribe the audio. Please try again, or use the mic button."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        result = analyze_symptoms_with_gemini(transcript_en)
+        response_text_en = build_severity_prompt_text(result["predicted_disease"])
+        response_text, speech_text = _localize_response_text(response_text_en, lang)
+        chat = ChatHistory.objects.create(
+            user=request.user,
+            message=transcript_en,
+            response=response_text,
+            predicted_disease=result["predicted_disease"],
+            advice=result["advice"],
+        )
+
+        return Response(
+            {
+                "chat_id": chat.id,
+                "transcript_en": transcript_en,
+                "predicted_disease": result["predicted_disease"],
+                "tablets": result["tablets"],
+                "tablet_suggestions": build_tablet_suggestions(result.get("tablets", ""), result.get("predicted_disease", "")),
+                "advice": result["advice"],
+                "response": response_text,
+                "speech_text": speech_text,
+
+                "response_lang": lang,
+                "speech_lang": lang,
+                "pending_severity": True,
+                "severity_options": ["mild", "moderate", "severe"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+
+
+class SeverityResponseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = SeveritySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        chat_id = serializer.validated_data["chat_id"]
+        severity = serializer.validated_data["severity"]
+
+
+
+        lang = _resolve_lang(serializer.validated_data.get("lang"))
+        try:
+            chat = ChatHistory.objects.get(id=chat_id, user=request.user)
+        except ChatHistory.DoesNotExist:
+            return Response({"detail": "Chat not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        analysis_message = _prepare_message_for_analysis(chat.message)
+        result = analyze_symptoms_with_gemini(analysis_message)
+        response_text_en = build_severity_response_text(result, severity)
+        response_text, speech_text = _localize_response_text(response_text_en, lang)
+
+        chat.response = response_text
+        chat.predicted_disease = result["predicted_disease"]
+        chat.advice = result["advice"]
+        chat.save(update_fields=["response", "predicted_disease", "advice"])
+
+        return Response(
+            {
+                "chat_id": chat.id,
+                "severity": severity,
+                "predicted_disease": result["predicted_disease"],
+                "tablets": result["tablets"],
+                "tablet_suggestions": build_tablet_suggestions(result.get("tablets", ""), result.get("predicted_disease", "")),
+                "advice": result["advice"],
+                "response": response_text,
+                "speech_text": speech_text,
+
+                "response_lang": lang,
+                "speech_lang": lang,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+
+
+
+class AutoImageMessageView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = AutoImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        lang = _resolve_lang(serializer.validated_data.get("lang"))
+        message = (serializer.validated_data.get("message") or "").strip() or "Image uploaded."
+        image = serializer.validated_data["image"]
+
+        content_type = getattr(image, "content_type", "")
+        if content_type and not content_type.startswith("image/"):
+            return Response({"detail": "Please upload a valid image file."}, status=status.HTTP_400_BAD_REQUEST)
+        if getattr(image, "size", 0) and image.size > 5 * 1024 * 1024:
+            return Response({"detail": "Image must be 5MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = analyze_auto_image_message(image, message=message)
+        image.seek(0)
+
+        ok = bool(result.get("ok"))
+        needs_reupload = bool(result.get("needs_reupload"))
+        kind = str(result.get("kind") or "other")
+
+        response_text = str(result.get("response_text") or "").strip()
+        if not response_text:
+            response_text = str(result.get("detail") or "Please upload a clearer image.").strip() or "Please upload a clearer image."
+
+        speech_text = str(result.get("speech_text") or "").strip() or None
+
+        if lang == "kn":
+            response_text = speech_text or translate_to_kannada(response_text)
+            speech_text = response_text
+        else:
+            speech_text = response_text
+        # Store successful analyses only.
+        chat_id = None
+        image_url = None
+        if ok:
+            chat = ChatHistory.objects.create(
+                user=request.user,
+                message=message,
+                image=image,
+                response=response_text,
+                predicted_disease=f"Image: {kind}",
+                advice="",
+            )
+            chat_id = chat.id
+            if getattr(chat, "image", None):
+                try:
+                    image_url = request.build_absolute_uri(chat.image.url)
+                except ValueError:
+                    image_url = None
+
+        return Response(
+            {
+                "ok": ok,
+                "needs_reupload": needs_reupload,
+                "kind": kind,
+                "chat_id": chat_id,
+                "message": message,
+                "image_url": image_url,
+                "response": response_text,
+                "speech_text": speech_text,
+
+                "response_lang": lang,
+                "speech_lang": lang,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class MedicineChatMessageView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = MedicineImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        lang = _resolve_lang(serializer.validated_data.get("lang"))
+        message = (serializer.validated_data.get("message") or "").strip() or "Medicine image uploaded."
+        image = serializer.validated_data["image"]
+
+        content_type = getattr(image, "content_type", "")
+        if content_type and not content_type.startswith("image/"):
+            return Response({"detail": "Please upload a valid image file."}, status=status.HTTP_400_BAD_REQUEST)
+        if getattr(image, "size", 0) and image.size > 5 * 1024 * 1024:
+            return Response({"detail": "Image must be 5MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = analyze_medicine_image(image, hint_text=message)
+        image.seek(0)
+
+        # If unclear, do not store it as chat history to avoid polluting history.
+        if not result.get("ok") and result.get("needs_reupload"):
+            return Response({"detail": str(result.get("detail") or "Please upload a clearer cover/label photo.")}, status=status.HTTP_400_BAD_REQUEST)
+
+        response_text_en = build_medicine_response_text(result)
+        response_text, speech_text = _localize_response_text(response_text_en, lang)
+
+        chat = ChatHistory.objects.create(
+            user=request.user,
+            message=message,
+            image=image,
+            response=response_text,
+            predicted_disease="Medicine Identification",
+            advice=str(result.get("uses") or ""),
+        )
+
+        image_url = None
+        if getattr(chat, "image", None):
+            try:
+                image_url = request.build_absolute_uri(chat.image.url)
+            except ValueError:
+                image_url = None
+
+        return Response(
+            {
+                "chat_id": chat.id,
+                "message": message,
+                "image_url": image_url,
+                "response": response_text,
+                "speech_text": speech_text,
+
+                "response_lang": lang,
+                "speech_lang": lang,
+                "medicine_name": result.get("medicine_name"),
+                "uses": result.get("uses"),
+                "confidence": result.get("confidence"),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class PrescriptionChatMessageView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = PrescriptionChatMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        lang = _resolve_lang(serializer.validated_data.get("lang"))
+        message = (serializer.validated_data.get("message") or "").strip() or "Prescription image uploaded."
+        image = serializer.validated_data["image"]
+
+        content_type = getattr(image, "content_type", "")
+        if content_type and not content_type.startswith("image/"):
+            return Response({"detail": "Please upload a valid image file."}, status=status.HTTP_400_BAD_REQUEST)
+        if getattr(image, "size", 0) and image.size > 5 * 1024 * 1024:
+            return Response({"detail": "Image must be 5MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = analyze_prescription_image(image)
+        response_text_en = build_prescription_response_text(result)
+        response_text, speech_text = _localize_response_text(response_text_en, lang)
+
+        chat = ChatHistory.objects.create(
+            user=request.user,
+            message=message,
+            image=image,
+            response=response_text,
+            predicted_disease="Prescription Review",
+            advice=(result.get("summary") or ""),
+        )
+
+        image_url = None
+        if getattr(chat, "image", None):
+            try:
+                image_url = request.build_absolute_uri(chat.image.url)
+            except ValueError:
+                image_url = None
+
+        return Response(
+            {
+                "chat_id": chat.id,
+                "message": message,
+                "image_url": image_url,
+                "response": response_text,
+                "speech_text": speech_text,
+
+                "response_lang": lang,
+                "speech_lang": lang,
+            },
+            status=status.HTTP_200_OK,
+        )
+class ChatRatingView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChatRatingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        chat = serializer.validated_data["chat"]
+
+        if chat.user_id != request.user.id:
+            return Response({"detail": "You can rate only your own chats."}, status=status.HTTP_403_FORBIDDEN)
+
+        rating, created = ChatRating.objects.update_or_create(
+            user=request.user,
+            chat=chat,
+            defaults={
+                "rating": serializer.validated_data["rating"],
+                "feedback": serializer.validated_data.get("feedback", ""),
+            },
+        )
+
+        return Response(
+            {"created": created, "rating": ChatRatingSerializer(rating).data},
+            status=status.HTTP_200_OK,
+        )
+
+
+class EmergencyCallConfigView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        phone_number = getattr(settings, "EMERGENCY_CALL_NUMBER", "").strip()
+        return Response(
+            {
+                "phone_number": phone_number,
+                "call_enabled": bool(phone_number),
+                "callback_enabled": is_twilio_calling_enabled(),
+                "provider": "twilio" if is_twilio_calling_enabled() else "",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class InitiateHelpCallView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if not is_twilio_calling_enabled():
+            return Response({"detail": "Calling provider is not configured."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        serializer = CallRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        to_number = serializer.validated_data["phone_number"]
+
+        allowlist = getattr(settings, "CALLBACK_ALLOWLIST", []) or []
+        if allowlist and to_number not in allowlist:
+            return Response({"detail": "This number is not allowed for callback in this environment."}, status=status.HTTP_403_FORBIDDEN)
+
+        cooldown = int(getattr(settings, "CALLBACK_RATE_LIMIT_SECONDS", 120) or 120)
+        key = f"callback:{request.user.id}"
+        if cache.get(key):
+            return Response({"detail": "Please wait before requesting another call."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        cache.set(key, True, timeout=cooldown)
+
+        bridge_to = getattr(settings, "TWILIO_BRIDGE_TO_NUMBER", "").strip() or None
+        result = initiate_twilio_callback(to_number, bridge_to=bridge_to)
+        if not result.get("ok"):
+            return Response({"detail": result.get("detail", "Call failed.")}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(result, status=status.HTTP_200_OK)

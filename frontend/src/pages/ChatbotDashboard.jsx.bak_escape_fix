@@ -1,0 +1,798 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import {
+  fetchCallConfig,
+  fetchChatHistory,
+  requestHelpCall,
+  sendAutoImageMessage,
+  sendChatMessage,
+  sendSeverity,
+  sendVoiceMessage,
+  translateToEnglish,
+} from "../api/chat";
+
+
+const DEV_ASSET_BUST = import.meta.env.DEV ? String(Date.now()) : "";
+
+function getTabletImageCandidates(imageKey) {
+  const key = String(imageKey || "generic").trim() || "generic";
+  const baseUrl = import.meta.env.BASE_URL || "/";
+  const base = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+
+  const urls = [
+    `${base}meds/${key}.jpeg`,
+    `${base}meds/${key}.jpg`,
+    `${base}meds/${key}.png`,
+    `${base}meds/${key}.svg`,
+    `${base}meds/generic.svg`,
+  ];
+
+  if (!DEV_ASSET_BUST) return urls;
+  return urls.map((url) => `${url}?v=${DEV_ASSET_BUST}`);
+}
+
+function getTabletImageUrl(imageKey) {
+  return getTabletImageCandidates(imageKey)[0];
+}
+
+function handleTabletImageError(event, imageKey) {
+  const urls = getTabletImageCandidates(imageKey);
+  const img = event.currentTarget;
+  const currentIndex = Number(img.dataset.fallbackIndex || "0");
+  const nextIndex = currentIndex + 1;
+
+  if (nextIndex >= urls.length) {
+    img.onerror = null;
+    return;
+  }
+
+  img.dataset.fallbackIndex = String(nextIndex);
+  img.src = urls[nextIndex];
+}
+
+
+function TabletSuggestions({ suggestions, onSelect }) {
+  if (!Array.isArray(suggestions) || suggestions.length === 0) return null;
+
+  return (
+    <div className="tablet-suggestions">
+      {suggestions.map((item, idx) => (
+        <div key={String(item?.name || idx) + "-" + String(idx)} className="tablet-card">
+          <img key={String(item?.image_key || item?.name || idx) + ":" + DEV_ASSET_BUST} className="tablet-image" data-fallback-index="0" src={getTabletImageUrl(item?.image_key)} alt={item?.name || "Tablet"} onClick={() => onSelect && onSelect(item)} style={{ cursor: "pointer" }} onLoad={(event) => { event.currentTarget.dataset.fallbackIndex = "0"; }} onError={(event) => handleTabletImageError(event, item?.image_key)} />
+          <div className="tablet-meta">
+            <div className="tablet-name">{item?.name || "Medicine"}</div>
+            <div className="tablet-use">{item?.use || ""}</div>
+            <div className="tablet-disclaimer">{item?.disclaimer || "For reference only. Consult doctor before use."}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+function hasKannadaChars(text) {
+  return /[\u0C80-\u0CFF]/.test(text || "");
+}
+
+function renderMessageContent(message) {
+  const content = String(message?.content || "").replaceAll("***", "");
+
+  if (message?.role !== "bot") {
+    return <div style={{ whiteSpace: "pre-wrap" }}>{content}</div>;
+  }
+
+  const normalized = content.replaceAll("\\\\n", "\n");
+  const lines = normalized.split("\n");
+
+  return (
+    <div style={{ whiteSpace: "pre-wrap" }}>
+      {lines.map((line, idx) => {
+        const trimmed = line.trimStart();
+        const match = trimmed.match(/^([A-Za-z ]+)\s*:\s*(.*)$/);
+
+        if (match) {
+          const labelRaw = (match[1] || "").trim();
+          const value = (match[2] || "").trim();
+          const labelLower = labelRaw.toLowerCase();
+          const shouldHighlight =
+            labelLower === "tablets" ||
+            labelLower === "tablet" ||
+            labelLower === "natural medicine" ||
+            labelLower === "home remedies";
+
+          if (shouldHighlight) {
+            return (
+              <div key={idx}>
+                <span className="highlight-label">{labelRaw}</span>: {value || "-"}
+              </div>
+            );
+          }
+        }
+
+        return <div key={idx}>{line}</div>;
+      })}
+    </div>
+  );
+}
+function ChatbotDashboard() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [lang, setLang] = useState(\"en\");
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [ttsSupported, setTtsSupported] = useState(false);
+  const [ttsVoicesLoaded, setTtsVoicesLoaded] = useState(false);
+  const [hasKannadaVoice, setHasKannadaVoice] = useState(false);
+  const [hasEnglishVoice, setHasEnglishVoice] = useState(true);
+  const [listening, setListening] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null);
+  const [attachedPreviewUrl, setAttachedPreviewUrl] = useState("");
+  const [attachedAudio, setAttachedAudio] = useState(null);
+  const [callConfig, setCallConfig] = useState({ call_enabled: false, phone_number: "", callback_enabled: false, provider: "" });
+  const [callRequestLoading, setCallRequestLoading] = useState(false);
+  const [severityLoadingChatId, setSeverityLoadingChatId] = useState(null);
+  const [selectedTablet, setSelectedTablet] = useState(null);
+const recognitionRef = useRef(null);
+  const imageInputRef = useRef(null);
+
+  const latestBotMessageWithSpeech = useMemo(
+    () => [...messages].reverse().find((message) => message.role === "bot" && message.speechText),
+    [messages],
+  );
+useEffect(() => {
+    async function loadHistory() {
+      try {
+        const [history, callInfo] = await Promise.all([fetchChatHistory(), fetchCallConfig()]);
+        const normalized = history
+          .slice()
+          .reverse()
+          .flatMap((item) => [
+            {
+              role: "user",
+              content: item.message,
+              timestamp: item.timestamp,
+              chatId: item.id,
+              imageUrl: item.image_url,
+            },
+            { role: "bot", content: item.response, timestamp: item.timestamp, chatId: item.id },
+          ]);
+        setMessages(normalized);
+        setCallConfig(callInfo);
+      } catch {
+        setError("Could not load dashboard data.");
+      }
+    }
+
+    loadHistory();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (attachedPreviewUrl) {
+        URL.revokeObjectURL(attachedPreviewUrl);
+      }
+    };
+  }, [attachedPreviewUrl]);
+
+  useEffect(() => {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      setTtsSupported(false);
+      setTtsVoicesLoaded(false);
+      setHasKannadaVoice(false);
+      return;
+    }
+
+    setTtsSupported(true);
+
+    function refreshVoices() {
+      const voices = synth.getVoices() || [];
+      setTtsVoicesLoaded(true);
+      setHasKannadaVoice(voices.some((voice) => (voice.lang || "").toLowerCase().startsWith("kn")));
+    }
+
+    refreshVoices();
+    synth.onvoiceschanged = refreshVoices;
+
+    return () => {
+      if (synth.onvoiceschanged === refreshVoices) {
+        synth.onvoiceschanged = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "kn-IN";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => {
+      setListening(false);
+      setError("Voice input failed. Please try again.");
+    };
+    recognition.onresult = (event) => {
+      const transcript = event?.results?.[0]?.[0]?.transcript || "";
+      const trimmed = transcript.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      setError("");
+      setInput((prev) => (prev + " " + trimmed).trim());
+    };
+
+    recognitionRef.current = recognition;
+    setSpeechSupported(true);
+
+    return () => {
+      recognition.stop();
+    };
+  }, []);
+
+  function speakText(text, speechLang = lang) {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      setError("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    const value = (text || "").trim();
+    if (!value) {
+      setError("No text available to speak yet.");
+      return;
+    }
+
+    const desiredLang = speechLang === "kn" ? "kn-IN" : "en-IN";
+
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(value);
+    utterance.lang = desiredLang;
+
+    const voices = synth.getVoices() || [];
+    const prefix = speechLang === "kn" ? "kn" : "en";
+    const preferredVoice =
+      voices.find((voice) => (voice.lang || "").toLowerCase().startsWith(prefix + "-in")) ||
+      voices.find((voice) => (voice.lang || "").toLowerCase().startsWith(prefix));
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.rate = speechLang === "kn" ? 0.92 : 0.98;
+    utterance.pitch = 1;
+    synth.speak(utterance);
+  }
+
+
+    const value = (text || "").trim();
+    if (!value) {
+      setError("No voice text available yet. Send a new message first.");
+      return;
+    }
+
+    if (!hasKannadaChars(value)) {
+      setError("Kannada voice text is not available for this reply yet. Send a new message again.");
+      return;
+    }
+
+    if (ttsVoicesLoaded && !hasKannadaVoice) {
+      setError(
+        "Kannada voice is not installed on this PC/browser. Install a Kannada speech/voice pack in Windows settings, then restart the browser.",
+      );
+      return;
+    }
+
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(value);
+    utterance.lang = "kn-IN";
+
+    const voices = synth.getVoices() || [];
+    const kannadaVoice = voices.find((voice) => (voice.lang || "").toLowerCase().startsWith("kn"));
+    if (kannadaVoice) {
+      utterance.voice = kannadaVoice;
+    }
+
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    synth.speak(utterance);
+  }
+
+
+
+  async function handleRequestHelpCall() {
+    if (!callConfig?.callback_enabled) {
+      setError("Callback calling is not enabled.");
+      return;
+    }
+
+    const saved = window.localStorage.getItem("callback_phone") || "";
+    const toNumber = window.prompt("Enter your phone number in E.164 format (example: +919999999999)", saved) || "";
+    const trimmed = toNumber.trim();
+    if (!trimmed) return;
+
+    window.localStorage.setItem("callback_phone", trimmed);
+
+    setError("");
+    setCallRequestLoading(true);
+    try {
+      const data = await requestHelpCall(trimmed);
+      if (data?.ok) {
+        setError("Calling you now... Please answer your phone.");
+      } else {
+        setError(data?.detail || "Could not start the call.");
+      }
+    } catch (err) {
+      setError("Could not start the call. Please try again.");
+    } finally {
+      setCallRequestLoading(false);
+    }
+  }
+  function startVoiceInput() {
+    if (!recognitionRef.current) {
+      setError("Speech-to-text is not supported in this browser.");
+      return;
+    }
+    setError("");
+    recognitionRef.current.lang = lang === \"kn\" ? \"kn-IN\" : \"en-IN\";
+    recognitionRef.current.start();
+  }
+
+  function handleImagePick(event) {
+    const file = event.target.files?.[0] || null;
+
+    if (attachedPreviewUrl) {
+      URL.revokeObjectURL(attachedPreviewUrl);
+    }
+
+    if (!file) {
+      setAttachedImage(null);
+      setAttachedPreviewUrl("");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      setAttachedImage(null);
+      setAttachedPreviewUrl("");
+      return;
+    }
+
+    setError("");
+    setError("");
+    setAttachedAudio(null);
+
+    setAttachedImage(file);
+    setAttachedPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function handleAudioPick(event) {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) {
+      setAttachedAudio(null);
+      return;
+    }
+
+    if (file.type && !file.type.startsWith("audio/")) {
+      setError("Please select a valid audio file.");
+      setAttachedAudio(null);
+      return;
+    }
+
+    setError("");
+    setAttachedAudio(file);
+    setAttachedImage(null);
+    setAttachedPrescription(null);
+    if (attachedPreviewUrl) {
+      URL.revokeObjectURL(attachedPreviewUrl);
+      setAttachedPreviewUrl("");
+    }
+    if (prescriptionPreviewUrl) {
+      URL.revokeObjectURL(prescriptionPreviewUrl);
+      setPrescriptionPreviewUrl("");
+    }
+  }
+
+  async function handleSend(event) {
+    event.preventDefault();
+
+    const trimmed = input.trim();
+    const hasVoice = Boolean(attachedAudio);
+    const hasImage = Boolean(attachedImage);
+
+    if (!hasVoice && !hasImage && !trimmed) {
+      setError("Please enter symptoms or upload an image/voice note.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      if (hasVoice) {
+        const data = await sendVoiceMessage(attachedAudio, lang);
+        const userMessage = {
+          role: "user",
+          content: data.transcript_en,
+          timestamp: new Date().toISOString(),
+        };
+        const botMessage = {
+          role: "bot",
+          content: data.response,
+          speechText: data.speech_text || null,
+          speechLang: data.speech_lang || lang,
+          timestamp: new Date().toISOString(),
+          chatId: data.chat_id,
+          pendingSeverity: Boolean(data.pending_severity),
+          severityOptions: data.severity_options || null,
+          tabletSuggestions: data.tablet_suggestions || null,
+        };
+
+        setMessages((prev) => [...prev, userMessage, botMessage]);
+        if (autoSpeak) {
+          speakText(data.speech_text || data.response, data.speech_lang || lang);
+        }
+        setInput("");
+      } else if (hasImage) {
+        const userText = trimmed || "Image uploaded.";
+        const userMessage = {
+          role: "user",
+          content: userText,
+          timestamp: new Date().toISOString(),
+          imagePreviewUrl: attachedPreviewUrl || null,
+        };
+        setMessages((prev) => [...prev, userMessage]);
+        setInput("");
+
+        const data = await sendAutoImageMessage({ message: trimmed, image: attachedImage, lang });
+        const botMessage = {
+          role: "bot",
+          content: data.response,
+          speechText: data.speech_text || null,
+          speechLang: data.speech_lang || lang,
+          timestamp: new Date().toISOString(),
+          chatId: data.chat_id,
+          pendingSeverity: false,
+          severityOptions: null,
+          tabletSuggestions: null,
+        };
+        setMessages((prev) => [...prev, botMessage]);
+        if (autoSpeak) {
+          speakText(data.speech_text || data.response, data.speech_lang || lang);
+        }
+      } else {
+
+        const userMessage = {
+          role: "user",
+          content: trimmed,
+          timestamp: new Date().toISOString(),
+          imagePreviewUrl: attachedPreviewUrl || null,
+        };
+        setMessages((prev) => [...prev, userMessage]);
+        setInput("");
+
+        const data = await sendChatMessage({ message: trimmed, image: attachedImage, lang });
+        const botMessage = {
+          role: "bot",
+          content: data.response,
+          speechText: data.speech_text || null,
+          speechLang: data.speech_lang || lang,
+          timestamp: new Date().toISOString(),
+          chatId: data.chat_id,
+          pendingSeverity: Boolean(data.pending_severity),
+          severityOptions: data.severity_options || null,
+          tabletSuggestions: data.tablet_suggestions || null,
+        };
+        setMessages((prev) => [...prev, botMessage]);
+        if (autoSpeak) {
+          speakText(data.speech_text || data.response, data.speech_lang || lang);
+        }
+      }
+    } catch {
+      setError("Failed to get chatbot response. Please try again.");
+    } finally {
+      setLoading(false);
+      setAttachedAudio(null);
+      setAttachedImage(null);
+      setAttachedPrescription(null);
+      if (attachedPreviewUrl) {
+        URL.revokeObjectURL(attachedPreviewUrl);
+      }
+      if (prescriptionPreviewUrl) {
+        URL.revokeObjectURL(prescriptionPreviewUrl);
+      }
+      setAttachedPreviewUrl("");
+      setPrescriptionPreviewUrl("");
+    }
+  }
+
+
+  async function handleSeveritySelect(chatId, severity) {
+    if (!chatId || severityLoadingChatId) {
+      return;
+    }
+
+    setError("");
+    setSeverityLoadingChatId(chatId);
+
+    try {
+      const data = await sendSeverity({ chat_id: chatId, severity, lang });
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.role === "bot" && msg.chatId === chatId && msg.pendingSeverity) {
+            return {
+              ...msg,
+              content: data.response,
+              speechText: data.speech_text || null,
+          speechLang: data.speech_lang || lang,
+              pendingSeverity: false,
+              severityOptions: null,
+              tabletSuggestions: data.tablet_suggestions || null,
+            };
+          }
+          return msg;
+        }),
+      );
+      if (autoSpeak) {
+        speakText(data.speech_text || data.response, data.speech_lang || lang);
+      }
+    } catch {
+      setError("Failed to get severity response. Please try again.");
+    } finally {
+      setSeverityLoadingChatId(null);
+    }
+  }
+
+  return (
+    <main className="container dashboard">
+      <div className="dashboard-head">
+        <h2>Voice-Enabled Health Chatbot</h2>
+        <p>Choose English or Kannada for both text + voice replies.</p>
+      </div>
+      <section className="assist-toolbar">
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontWeight: 600 }}>Language:</span>
+          <button type="button" className="btn-outline" onClick={() => setLang("en")} aria-pressed={lang === "en"}>English</button>
+          <button type="button" className="btn-outline" onClick={() => setLang("kn")} aria-pressed={lang === "kn"}>Kannada</button>
+        </div>
+
+        <button type="button" className="btn-secondary" onClick={startVoiceInput} disabled={!speechSupported || listening}>
+          {listening ? "Listening..." : (lang === "kn" ? "Speak (Kannada)" : "Speak (English)")}
+        </button>
+        <button
+          type="button"
+          className="btn-outline"
+          onClick={() => latestBotMessageWithSpeech && speakText(latestBotMessageWithSpeech.speechText || latestBotMessageWithSpeech.content, latestBotMessageWithSpeech.speechLang || lang)}
+          disabled={!latestBotMessageWithSpeech}
+          title={!latestBotMessageWithSpeech ? "Send a new message to get Kannada voice" : ""}
+        >
+          Speak Last Reply
+        </button>
+        <label className="toggle-label" htmlFor="autoSpeak">
+          <input
+            id="autoSpeak"
+            type="checkbox"
+            checked={autoSpeak}
+            onChange={(event) => setAutoSpeak(event.target.checked)}
+          />
+          Auto-read replies
+        </label>
+        {callConfig.callback_enabled && (
+          <button
+            type="button"
+            className="btn-primary call-button"
+            onClick={handleRequestHelpCall}
+            disabled={callRequestLoading}
+            title={callRequestLoading ? "Calling..." : "Request an incoming call"}
+          >
+            {callRequestLoading ? "Calling..." : "Request Call Back"}
+          </button>
+        )}
+
+        {callConfig.call_enabled && (
+          <a className="btn-outline call-button" href={"tel:" + callConfig.phone_number}>
+            Call Emergency
+          </a>
+        )}
+      </section>
+
+      {!ttsSupported && <p className="error-text">Text-to-speech is not supported in this browser.</p>}
+      {lang === "kn" && ttsSupported && ttsVoicesLoaded && !hasKannadaVoice && autoSpeak && (
+        <p className="error-text">
+          Kannada voice not installed. Add Kannada language + speech pack in Windows, then restart the browser.
+        </p>
+      )}
+
+      <section className="chat-box">
+        <div className="messages">
+          {messages.length === 0 && <p className="placeholder">Start the conversation with your symptoms.</p>}
+          {messages.map((message, index) => (
+            <div key={String(message.timestamp) + "-" + String(index)} className={"message " + message.role}>
+              <div className="bubble">
+                {renderMessageContent(message)}
+                {message.role === "bot" && !message.pendingSeverity && message.tabletSuggestions && (
+                  <TabletSuggestions suggestions={message.tabletSuggestions} onSelect={setSelectedTablet} />
+                )}
+                {message.role === "bot" && message.pendingSeverity && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="btn-secondary severity-btn"
+                      onClick={() => handleSeveritySelect(message.chatId, "mild")}
+                      disabled={loading || severityLoadingChatId === message.chatId}
+                    >
+                      <span className="severity-dot severity-dot--mild" aria-hidden="true" /> Mild
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary severity-btn"
+                      onClick={() => handleSeveritySelect(message.chatId, "moderate")}
+                      disabled={loading || severityLoadingChatId === message.chatId}
+                    >
+                      <span className="severity-dot severity-dot--moderate" aria-hidden="true" /> Moderate
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary severity-btn"
+                      onClick={() => handleSeveritySelect(message.chatId, "severe")}
+                      disabled={loading || severityLoadingChatId === message.chatId}
+                    >
+                      <span className="severity-dot severity-dot--severe" aria-hidden="true" /> Severe
+                    </button>
+                  </div>
+                )}
+                {(message.imageUrl || message.imagePreviewUrl) && (
+                  <img
+                    src={message.imageUrl || message.imagePreviewUrl}
+                    alt="Attached"
+                    style={{ maxWidth: 260, width: "100%", borderRadius: 10, marginTop: 10 }}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form className="chat-input" onSubmit={handleSend}>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImagePick}
+            disabled={loading}
+            style={{ display: "none" }}
+          />
+
+          <div className="composer">
+            <button
+              type="button"
+              className="composer-btn composer-btn--camera"
+              onClick={() => imageInputRef.current && imageInputRef.current.click()}
+              disabled={loading}
+              title="Upload image (tablet/skin/prescription)"
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M8 7l1.2-2h5.6L16 7h2.2A2.8 2.8 0 0 1 21 9.8v8.4A2.8 2.8 0 0 1 18.2 21H5.8A2.8 2.8 0 0 1 3 18.2V9.8A2.8 2.8 0 0 1 5.8 7H8Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12 18a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                />
+              </svg>
+            </button>
+
+            <div className="composer-field">
+              <input
+                className="composer-input"
+                type="text"
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="Type symptoms or upload image..."
+                maxLength={1000}
+                disabled={loading}
+              />
+
+              <button
+                type="button"
+                className="composer-icon"
+                onClick={startVoiceInput}
+                disabled={loading || !speechSupported || listening}
+                title={!speechSupported ? "Speech-to-text not supported" : listening ? "Listening..." : (lang === "kn" ? "Speak (Kannada)" : "Speak (English)")}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="M19 11a7 7 0 0 1-14 0"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M12 18v3"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <button type="submit" className="composer-btn composer-btn--send" disabled={loading} title="Send">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M5 12h12"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M13 6l6 6-6 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {selectedTablet && (
+        <div className="tablet-modal" onClick={() => setSelectedTablet(null)}>
+          <div className="tablet-modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="tablet-modal-head">
+              <div className="tablet-modal-title">{selectedTablet?.name || "Medicine"}</div>
+              <button type="button" className="tablet-modal-close" onClick={() => setSelectedTablet(null)}>
+                Close
+              </button>
+            </div>
+            <div className="tablet-modal-body">
+              <img
+                key={String(selectedTablet?.image_key || selectedTablet?.name || "tablet")}
+                data-fallback-index="0"
+                className="tablet-modal-image"
+                src={getTabletImageUrl(selectedTablet?.image_key)}
+                alt={selectedTablet?.name || "Tablet"}
+                onLoad={(event) => { event.currentTarget.dataset.fallbackIndex = "0"; }}
+                onError={(event) => handleTabletImageError(event, selectedTablet?.image_key)}
+                            />
+              <div>
+                <div className="tablet-use" style={{ fontSize: "1rem" }}>{selectedTablet?.use || ""}</div>
+                <div className="tablet-disclaimer">{selectedTablet?.disclaimer || "For reference only. Consult doctor before use."}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="error-text">{error}</p>}
+    </main>
+  );
+}
+
+export default ChatbotDashboard;
+
+
+
+
+
+

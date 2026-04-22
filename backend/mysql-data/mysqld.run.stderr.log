@@ -1,0 +1,20 @@
+2026-03-16T08:35:08.373619Z 0 [System] [MY-015015] [Server] MySQL Server - start.
+2026-03-16T08:35:08.500326Z 0 [System] [MY-010116] [Server] C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe (mysqld 8.4.8) starting as process 5440
+2026-03-16T08:35:08.560139Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-03-16T08:35:09.627824Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-03-16T08:35:10.303915Z 0 [System] [MY-010229] [Server] Starting XA crash recovery...
+2026-03-16T08:35:10.311369Z 0 [System] [MY-010232] [Server] XA crash recovery finished.
+2026-03-16T08:35:10.561039Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-03-16T08:35:10.561378Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-03-16T08:35:10.664782Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060
+2026-03-16T08:35:10.664964Z 0 [System] [MY-010931] [Server] C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe: ready for connections. Version: '8.4.8'  socket: ''  port: 3306  MySQL Community Server - GPL.
+2026-03-16T08:59:24.023270Z 0 [System] [MY-015015] [Server] MySQL Server - start.
+2026-03-16T08:59:24.272133Z 0 [System] [MY-010116] [Server] C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe (mysqld 8.4.8) starting as process 2804
+2026-03-16T08:59:24.361052Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-03-16T08:59:25.568808Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-03-16T08:59:26.141304Z 0 [System] [MY-010229] [Server] Starting XA crash recovery...
+2026-03-16T08:59:26.149588Z 0 [System] [MY-010232] [Server] XA crash recovery finished.
+2026-03-16T08:59:26.584485Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-03-16T08:59:26.584970Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-03-16T08:59:26.820492Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060
+2026-03-16T08:59:26.819811Z 0 [System] [MY-010931] [Server] C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe: ready for connections. Version: '8.4.8'  socket: ''  port: 3306  MySQL Community Server - GPL.

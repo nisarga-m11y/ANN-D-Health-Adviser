@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-label="Use Case Diagram for ANN-D Health Adviser">
+  <defs>
+    <style>
+      .title { font: 800 54px Arial, Helvetica, sans-serif; fill: #0b2a43; }
+      .label { font: 700 22px Arial, Helvetica, sans-serif; fill: #0b2a43; }
+      .small { font: 600 16px Arial, Helvetica, sans-serif; fill: #0b2a43; opacity: 0.85; }
+      .system { fill: #d9eefb; stroke: #1b5b83; stroke-width: 3; rx: 18; }
+      .usecase { fill: #ffffff; stroke: #1b5b83; stroke-width: 3; }
+      .actor { stroke: #0b2a43; stroke-width: 5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .line { stroke: #0b2a43; stroke-width: 3; fill: none; }
+      .note { font: 500 15px Arial, Helvetica, sans-serif; fill: #0b2a43; opacity: 0.75; }
+    </style>
+  </defs>
+
+  <text x="80" y="80" class="title">Use Case Diagram (ANN-D Health Adviser)</text>
+
+  <!-- System boundary -->
+  <rect x="420" y="150" width="900" height="680" class="system"/>
+  <text x="870" y="200" text-anchor="middle" class="label">ANN-D Health Adviser System</text>
+
+  <!-- Actor: User -->
+  <g transform="translate(140,250)">
+    <circle cx="70" cy="35" r="28" class="actor"/>
+    <path d="M70 63 v78" class="actor"/>
+    <path d="M20 95 h100" class="actor"/>
+    <path d="M70 141 l-45 70" class="actor"/>
+    <path d="M70 141 l45 70" class="actor"/>
+    <text x="70" y="245" text-anchor="middle" class="label">User</text>
+  </g>
+
+  <!-- Actor: External Services -->
+  <g transform="translate(1220,250)">
+    <circle cx="70" cy="35" r="28" class="actor"/>
+    <path d="M70 63 v78" class="actor"/>
+    <path d="M20 95 h100" class="actor"/>
+    <path d="M70 141 l-45 70" class="actor"/>
+    <path d="M70 141 l45 70" class="actor"/>
+    <text x="70" y="245" text-anchor="middle" class="label">Services</text>
+    <text x="70" y="270" text-anchor="middle" class="small">TTS / Translate / Call</text>
+  </g>
+
+  <!-- Use cases (ovals) -->
+  <ellipse cx="640" cy="300" rx="180" ry="46" class="usecase"/>
+  <text x="640" y="307" text-anchor="middle" class="label">Register / Login</text>
+
+  <ellipse cx="640" cy="400" rx="220" ry="46" class="usecase"/>
+  <text x="640" y="407" text-anchor="middle" class="label">Chat (Text Symptoms)</text>
+
+  <ellipse cx="640" cy="500" rx="250" ry="46" class="usecase"/>
+  <text x="640" y="507" text-anchor="middle" class="label">Upload Image (Auto / Symptom)</text>
+
+  <ellipse cx="640" cy="600" rx="250" ry="46" class="usecase"/>
+  <text x="640" y="607" text-anchor="middle" class="label">Upload Medicine / Prescription</text>
+
+  <ellipse cx="1020" cy="360" rx="200" ry="46" class="usecase"/>
+  <text x="1020" y="367" text-anchor="middle" class="label">Voice Input (Kannada)</text>
+
+  <ellipse cx="1020" cy="460" rx="200" ry="46" class="usecase"/>
+  <text x="1020" y="467" text-anchor="middle" class="label">Voice Output (TTS)</text>
+
+  <ellipse cx="1020" cy="560" rx="200" ry="46" class="usecase"/>
+  <text x="1020" y="567" text-anchor="middle" class="label">Translate EN ↔ KN</text>
+
+  <ellipse cx="1020" cy="660" rx="200" ry="46" class="usecase"/>
+  <text x="1020" y="667" text-anchor="middle" class="label">Emergency Callback</text>
+
+  <ellipse cx="640" cy="700" rx="220" ry="46" class="usecase"/>
+  <text x="640" y="707" text-anchor="middle" class="label">View History / Health Report</text>
+
+  <ellipse cx="640" cy="790" rx="200" ry="46" class="usecase"/>
+  <text x="640" y="797" text-anchor="middle" class="label">Rate a Response</text>
+
+  <!-- Associations: User -->
+  <path class="line" d="M260 335 H460"/>
+  <path class="line" d="M260 335 C360 350, 420 370, 460 390"/>
+  <path class="line" d="M260 335 C360 420, 420 450, 460 490"/>
+  <path class="line" d="M260 335 C360 500, 420 545, 460 590"/>
+  <path class="line" d="M260 335 C360 610, 420 670, 460 700"/>
+  <path class="line" d="M260 335 C360 730, 420 760, 460 790"/>
+
+  <!-- Associations: Services -->
+  <path class="line" d="M1240 335 C1210 345, 1180 350, 1120 350"/>
+  <path class="line" d="M1240 335 C1210 430, 1180 450, 1120 460"/>
+  <path class="line" d="M1240 335 C1210 520, 1180 545, 1120 560"/>
+  <path class="line" d="M1240 335 C1210 630, 1180 650, 1120 660"/>
+
+  <!-- Notes -->
+  <text x="440" y="845" class="note">All outputs include a safety disclaimer (educational assistance only).</text>
+</svg>
