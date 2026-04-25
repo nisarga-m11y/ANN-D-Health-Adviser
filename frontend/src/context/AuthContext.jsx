@@ -3,6 +3,16 @@
 import { fetchCurrentUser, loginUser, registerUser } from "../api/auth";
 
 const AuthContext = createContext(null);
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 4000;
+
+function withTimeout(promise, timeoutMs, timeoutMessage) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    }),
+  ]);
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -17,7 +27,11 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const currentUser = await fetchCurrentUser();
+        const currentUser = await withTimeout(
+          fetchCurrentUser(),
+          AUTH_BOOTSTRAP_TIMEOUT_MS,
+          "Auth bootstrap timed out",
+        );
         setUser(currentUser);
         if (currentUser?.name) {
           localStorage.setItem("auth_user_name", String(currentUser.name));
@@ -28,6 +42,9 @@ export function AuthProvider({ children }) {
         }
       } catch {
         localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user_name");
+        localStorage.removeItem("auth_user_email");
+        localStorage.removeItem("auth_login_email");
       } finally {
         setLoading(false);
       }

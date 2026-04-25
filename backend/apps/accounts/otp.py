@@ -27,7 +27,9 @@ def generate_otp() -> str:
 
 
 def normalize_email(email: str) -> str:
-    return (email or "").strip().lower()
+    # Remove accidental whitespace anywhere in the address so pasted emails
+    # like "name@domain. com" do not break OTP sending or cache lookups.
+    return re.sub(r"\s+", "", (email or "").strip().lower())
 
 
 _PHONE_ALLOWED = re.compile(r"[^0-9+]")
@@ -137,12 +139,24 @@ def send_email_otp(email: str, otp: str, *, expires_in_seconds: int) -> tuple[bo
         send_mail(subject, message, from_email, [email], fail_silently=False)
         return True, ""
     except SMTPAuthenticationError:
+        if getattr(settings, "DEBUG", False):
+            logger.warning("SMTP authentication failed; using debug OTP flow for %s", email)
+            return True, ""
         return False, "SMTP authentication failed. Check email app password/credentials."
     except SMTPException as exc:
+        if getattr(settings, "DEBUG", False):
+            logger.warning("SMTP error in DEBUG mode for %s: %s", email, exc)
+            return True, ""
         return False, f"SMTP error: {exc}"
     except TimeoutError:
+        if getattr(settings, "DEBUG", False):
+            logger.warning("SMTP timeout in DEBUG mode for %s; using debug OTP flow", email)
+            return True, ""
         return False, "SMTP connection timed out. Check internet/firewall and try again."
     except Exception as exc:
+        if getattr(settings, "DEBUG", False):
+            logger.warning("Email send failed in DEBUG mode for %s: %s", email, exc)
+            return True, ""
         return False, f"Email send failed: {exc}"
 
 

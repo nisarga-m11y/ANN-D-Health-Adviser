@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChatbotDashboard from "./pages/ChatbotDashboard";
 import HealthReportPage from "./pages/HealthReportPage";
@@ -13,7 +14,7 @@ function App() {
   const hideNavbar = location.pathname === "/dashboard";
 
   return (
-    <>
+    <AppErrorBoundary>
       {!hideNavbar && <Navbar />}
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -37,7 +38,7 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </AppErrorBoundary>
   );
 }
 
