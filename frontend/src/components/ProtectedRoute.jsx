@@ -6,7 +6,14 @@ function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <div className="container">Loading...</div>;
+    return (
+      <main className="container auth-page">
+        <div className="auth-card" role="status" aria-live="polite">
+          <h2 style={{ marginTop: 0 }}>Loading your session...</h2>
+          <p style={{ marginBottom: 0 }}>We are checking your login status.</p>
+        </div>
+      </main>
+    );
   }
 
   if (!isAuthenticated) {

@@ -161,10 +161,7 @@ class SendMobileOtpView(APIView):
         store_otp("mobile", phone, otp, expires_in_seconds=expires_in)
         simulate_sms_otp(phone, otp, expires_in_seconds=expires_in)
 
-        response = {"detail": "OTP sent.", "expires_in": expires_in}
-        if getattr(settings, "OTP_DEBUG_RETURN_CODE", settings.DEBUG):
-            response["debug_otp"] = otp
-        return Response(response)
+        return Response({"detail": "OTP sent.", "expires_in": expires_in})
 
 
 class VerifyMobileOtpView(APIView):
