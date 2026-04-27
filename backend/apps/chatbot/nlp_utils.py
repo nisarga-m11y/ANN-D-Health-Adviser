@@ -14,7 +14,11 @@ def _ensure_nltk_resources():
     if _NLTK_READY:
         return
 
-    for resource, locator in [("punkt", "tokenizers/punkt"), ("stopwords", "corpora/stopwords")]:
+    for resource, locator in [
+        ("punkt", "tokenizers/punkt"),
+        ("punkt_tab", "tokenizers/punkt_tab"),
+        ("stopwords", "corpora/stopwords"),
+    ]:
         try:
             nltk.data.find(locator)
         except LookupError:

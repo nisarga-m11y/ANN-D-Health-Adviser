@@ -1447,7 +1447,7 @@ function speakText(text, speechLang = lang) {
             </div>
             <div className="contact-row">
               <span>Ambulance</span>
-              <strong className="pill-num pill-num--danger">102</strong>
+              <strong className="pill-num pill-num--danger">108</strong>
             </div>
             <div className="contact-row">
               <span>Health Helpline</span>

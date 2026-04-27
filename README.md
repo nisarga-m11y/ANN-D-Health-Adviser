@@ -1,241 +1,106 @@
-﻿# Personalized Health Advice and Symptom Checking Chatbot
+# ANN-D Health Advisor
 
-Full-stack AI chatbot application using:
-- Backend: Django + Django REST Framework
-- Frontend: React.js + HTML + CSS (Vite)
-- Database: MySQL
-- ML: Scikit-learn
-- NLP: NLTK
+Full-stack health assistant application:
+- Backend: Django + DRF
+- Frontend: React (Vite)
+- Database: SQLite by default (MySQL optional via env)
 
-## 1. Project Folder Structure
+## Quick Start (Run Anywhere with Docker)
 
-```text
-chatbot/
-├── backend/
-│   ├── .env.example
-│   ├── requirements.txt
-│   ├── manage.py
-│   ├── config/
-│   │   ├── __init__.py
-│   │   ├── asgi.py
-│   │   ├── settings.py
-│   │   ├── urls.py
-│   │   └── wsgi.py
-│   ├── apps/
-│   │   ├── __init__.py
-│   │   ├── accounts/
-│   │   │   ├── __init__.py
-│   │   │   ├── admin.py
-│   │   │   ├── apps.py
-│   │   │   ├── managers.py
-│   │   │   ├── models.py
-│   │   │   ├── serializers.py
-│   │   │   ├── urls.py
-│   │   │   ├── views.py
-│   │   │   └── migrations/
-│   │   │       └── __init__.py
-│   │   └── chatbot/
-│   │       ├── __init__.py
-│   │       ├── admin.py
-│   │       ├── apps.py
-│   │       ├── models.py
-│   │       ├── nlp_utils.py
-│   │       ├── serializers.py
-│   │       ├── services.py
-│   │       ├── urls.py
-│   │       ├── views.py
-│   │       └── migrations/
-│   │           └── __init__.py
-│   └── ml/
-│       ├── sample_symptoms.csv
-│       └── train_model.py
-├── frontend/
-│   ├── .env.example
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js
-│   └── src/
-│       ├── App.jsx
-│       ├── main.jsx
-│       ├── api/
-│       │   ├── auth.js
-│       │   ├── chat.js
-│       │   └── client.js
-│       ├── components/
-│       │   ├── Navbar.jsx
-│       │   └── ProtectedRoute.jsx
-│       ├── context/
-│       │   └── AuthContext.jsx
-│       ├── pages/
-│       │   ├── ChatbotDashboard.jsx
-│       │   ├── HealthReportPage.jsx
-│       │   ├── HomePage.jsx
-│       │   ├── LoginPage.jsx
-│       │   └── RegisterPage.jsx
-│       └── styles/
-│           └── global.css
-└── README.md
+### Prerequisites
+- Docker Desktop (or Docker Engine + Compose)
+
+### 1. Clone and enter project
+```bash
+git clone <your-repo-url>
+cd ANN-D-Health-Adviser
 ```
 
-## 2. Sample Dataset Format (Symptoms vs Disease)
-
-CSV format (`backend/ml/sample_symptoms.csv`):
-
-```csv
-symptom,disease
-"fever cough sore throat",Flu
-"runny nose sneezing mild fever",Common Cold
-"headache nausea light sensitivity",Migraine
+### 2. Create backend env
+```bash
+cp backend/.env.example backend/.env
 ```
 
-## 3. Backend Setup (Django)
+On Windows PowerShell:
+```powershell
+Copy-Item backend\.env.example backend\.env
+```
 
-By default the backend uses SQLite (ackend/db.sqlite3) for easy local dev.
+### 3. Start the full website
+```bash
+docker compose up --build
+```
 
-- To use MySQL instead, set USE_MYSQL=True in ackend/.env and make sure your MySQL server is running.
+### 4. Open in browser
+- Website: `http://localhost:8080`
+- Backend API root: `http://localhost:8000/api/`
 
-1. Create MySQL database:
-   - `CREATE DATABASE health_chatbot CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+## Stop the App
+```bash
+docker compose down
+```
 
-2. Create and activate Python virtual environment:
-   - Windows:
-     - `cd backend`
-     - `python -m venv venv`
-     - `venv\Scripts\activate`
+## Notes
+- Frontend and backend are containerized.
+- Frontend Nginx proxies `/api` and `/media` to backend.
+- Backend runs migrations automatically on startup.
 
-3. Install dependencies:
-   - `pip install -r requirements.txt`
+## Local Development (Without Docker)
 
-4. Configure environment:
-   - Copy `backend/.env.example` to `backend/.env`
-   - Update MySQL credentials and secret key
+### Backend
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env      # Windows PowerShell: Copy-Item .env.example .env
+python manage.py migrate
+python manage.py runserver
+```
 
-5. Run migrations:
-   - `python manage.py makemigrations accounts chatbot`
-   - `python manage.py migrate`
+### Frontend
+```bash
+cd frontend
+npm install
+cp .env.example .env      # Windows PowerShell: Copy-Item .env.example .env
+npm run dev
+```
 
-6. Train ML model and save pickle files:
-   - `python ml/train_model.py`
+Frontend local URL: `http://localhost:5173`
 
-7. Create admin user (optional):
-   - `python manage.py createsuperuser`
+## Deploy to Render (Public Website)
 
-8. Start backend:
-   - `python manage.py runserver`
+### A. Push code to GitHub
+Render deploys from a Git repository, so first push this project to GitHub.
 
-Backend base URL:
-- `http://127.0.0.1:8000`
+### B. Create Backend service on Render
+1. In Render dashboard, click `New +` -> `Web Service`.
+2. Connect your GitHub repo and choose this project.
+3. Choose `Docker` and set:
+   - Root Directory: `backend`
+   - Dockerfile Path: `./backend/Dockerfile`
+4. Add environment variables:
+   - `DJANGO_SECRET_KEY` = long random string
+   - `DEBUG` = `False`
+   - `ALLOWED_HOSTS` = `*`
+   - `USE_MYSQL` = `False`
+   - `EMERGENCY_CALL_NUMBER` = `108`
+   - Optional: `GEMINI_API_KEY`, `EMAIL_*`, `TWILIO_*`
+5. Deploy and copy backend URL, for example:
+   - `https://your-backend.onrender.com`
 
-## 4. Frontend Setup (React)
+### C. Create Frontend static site on Render
+1. In Render dashboard, click `New +` -> `Static Site`.
+2. Select the same GitHub repo.
+3. Set:
+   - Root Directory: `frontend`
+   - Build Command: `npm ci && npm run build`
+   - Publish Directory: `dist`
+4. Add environment variable:
+   - `VITE_API_BASE_URL` = `https://your-backend.onrender.com/api`
+5. Deploy.
 
-1. Install Node.js 18+.
-2. In new terminal:
-   - `cd frontend`
-   - `npm install`
-3. Configure environment:
-   - Copy `frontend/.env.example` to `frontend/.env`
-4. Start frontend:
-   - `npm run dev`
+After deploy, Render gives a public frontend URL. That is your live website.
 
-Frontend URL:
-- `http://localhost:5173`
-
-## 5. Django + React Integration
-
-- React Axios client points to `VITE_API_BASE_URL` (default: `http://127.0.0.1:8000/api`)
-- Django CORS allows `http://localhost:5173`
-- Auth flow:
-  - Register/Login returns DRF token
-  - Token saved in browser local storage
-  - Token automatically sent in `Authorization: Token <token>`
-
-## 6. API Endpoints (Django REST Framework)
-
-Auth:
-- `POST /api/auth/register/`
-- `POST /api/auth/login/`
-- `GET /api/auth/me/`
-
-Chatbot:
-- `POST /api/chat/predict/` (ML prediction only)
-  - Input: `{ "message": "fever, cough, body ache" }`
-  - Output: disease prediction, confidence, advice
-- `POST /api/chat/message/` (prediction + save in history)
-- `GET /api/chat/history/`
-## 7. Database Design
-
-1. `users` table (custom Django auth model)
-- `id`, `name`, `email`, `password`, auth/status fields
-
-2. `chat_history` table
-- `id`, `user_id`, `message`, `response`, `predicted_disease`, `advice`, `timestamp`
-
-3. `symptoms_data` table
-- `id`, `symptom`, `disease`
-
-## 8. Implemented Features
-
-- User authentication (register/login/logout)
-- Modern chatbot-like dashboard
-- NLP preprocessing (tokenization + stopword removal)
-- ML symptom classification (Naive Bayes with TF-IDF)
-- Personalized health advice generation
-- Chat history tracking and health report page
-- Responsive design for mobile and desktop
-- Error handling for invalid input and API failures
-
-## 9. Important Disclaimer
-
-This project provides educational AI-assisted symptom analysis and is not a medical diagnosis system. Users should consult qualified healthcare professionals for medical decisions.
-
-
-## 10. System Architecture
-
-1. React frontend captures user symptoms in natural language.
-2. Request sent to Django REST API (/api/chat/predict/ or /api/chat/message/).
-3. Django preprocesses text using NLTK (tokenization + stopword removal).
-4. Scikit-learn model predicts likely disease from vectorized input.
-5. Backend generates personalized health advice and safety disclaimer.
-6. For chat mode, request + response are stored in MySQL chat_history.
-7. React dashboard and health report display real-time and historical results.
-
-
-
-## 11. Additional Requirements (Planned Features)
-
-### Doctor Visit Companion
-- Keep a "my symptoms timeline".
-- Store medications list, allergies, and test reports.
-- Generate a 1-page summary for the next appointment.
-
-### Women Safety + Quick Help Mode
-- Trigger phrase: "I feel unsafe".
-- Show immediate steps and safety tips (no false promises).
-- Provide location-sharing instructions.
-- Trusted contacts checklist.
-- Safe route tips.
-
-### Senior Citizen Helper
-- Medication reminders.
-- Scam protection guidance.
-- Simple explanations.
-- "Call my family" prompts.
-- Large-text voice UI.
-
-### Image-to-Help
-- Upload photos of prescriptions, bills, notices, or forms.
-- Extract key information.
-- Explain it in simple terms.
-
-### Local Micro-Business Helper
-- Stock list.
-- Pricing tips.
-- Simple invoice messages.
-- Customer follow-up templates.
-
-### Kitchen Planner
-- Use budget + diet + local foods preferences.
-- Generate weekly menu.
-- Generate shopping list.
-- Suggest "cook with what’s at home" options.
-
+## Disclaimer
+This application is for educational support and not a replacement for professional medical diagnosis or treatment.

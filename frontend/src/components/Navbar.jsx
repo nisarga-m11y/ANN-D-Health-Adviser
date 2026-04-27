@@ -16,9 +16,9 @@ function Navbar() {
     setShowLogoutModal(true);
   }
 
-  function handleSkipAndLogout() {
+  async function handleSkipAndLogout() {
     setShowLogoutModal(false);
-    logout();
+    await logout();
     navigate("/login");
   }
 

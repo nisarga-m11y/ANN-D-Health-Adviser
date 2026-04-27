@@ -354,6 +354,10 @@ class ChatHistoryView(APIView):
         history = ChatHistory.objects.filter(user=request.user)[:50]
         return Response(ChatHistorySerializer(history, many=True, context={"request": request}).data)
 
+    def delete(self, request):
+        deleted_count, _ = ChatHistory.objects.filter(user=request.user).delete()
+        return Response({"deleted": deleted_count}, status=status.HTTP_200_OK)
+
 
 class SymptomImageAnalysisView(APIView):
     permission_classes = [permissions.IsAuthenticated]

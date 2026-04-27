@@ -84,7 +84,13 @@ function OtpAuthPage() {
       setOtpSent(true);
       setOtp("");
       setSecondsLeft(expires);
-      setMessage({ type: "success", text: "OTP sent successfully." });
+      const debugOtp = String(data?.debug_otp || "").trim();
+      setMessage({
+        type: "success",
+        text: debugOtp
+          ? `OTP sent successfully. Debug OTP: ${debugOtp}`
+          : "OTP sent successfully.",
+      });
     } catch (err) {
       const retryAfter = err?.response?.data?.retry_after;
       const detail = err?.response?.data?.detail || "Failed to send OTP.";

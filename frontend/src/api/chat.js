@@ -43,6 +43,11 @@ export async function fetchChatHistory() {
   return data;
 }
 
+export async function clearChatHistory() {
+  const { data } = await apiClient.delete("/chat/history/");
+  return data;
+}
+
 export async function uploadSymptomImage({ image, category, lang = "en" }) {
   const formData = new FormData();
   formData.append("image", image);

@@ -1,6 +1,7 @@
 ﻿import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { fetchCurrentUser, loginUser, registerUser } from "../api/auth";
+import { clearChatHistory } from "../api/chat";
 
 const AuthContext = createContext(null);
 
@@ -68,9 +69,18 @@ export function AuthProvider({ children }) {
     return data;
   }
 
-  function logout() {
-    localStorage.removeItem("auth_token");
-    setUser(null);
+  async function logout() {
+    try {
+      await clearChatHistory();
+    } catch {
+      // Keep logout resilient even if history cleanup fails.
+    } finally {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user_name");
+      localStorage.removeItem("auth_user_email");
+      localStorage.removeItem("auth_login_email");
+      setUser(null);
+    }
   }
 
   const value = useMemo(
